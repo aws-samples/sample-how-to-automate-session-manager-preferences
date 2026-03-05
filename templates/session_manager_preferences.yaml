@@ -442,7 +442,6 @@ Resources:
               Returns:
                   dict: Response containing status code and completion message
               """
-              logger.info("Received event: %s", event)
 
               # Setting physical resource ID to stack ID
               physical_resource_id = event["ResourceProperties"].get("STACK_NAME", "session-manager")
@@ -500,7 +499,7 @@ Resources:
       Timeout: 300
       MemorySize: 128
       Layers:
-        - !Sub "arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV3-python312-x86_64:11"
+        - !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV3-python312-x86_64:11"
       TracingConfig:
         Mode: Active
 
@@ -518,7 +517,7 @@ Resources:
               StringEquals:
                 "aws:SourceAccount": !Ref "AWS::AccountId"
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 
   LambdaExecutionPolicy:
     Type: AWS::IAM::ManagedPolicy
@@ -536,8 +535,8 @@ Resources:
               - ssm:UpdateDocumentDefaultVersion
               - ssm:GetParameter
             Resource:
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:document/SSM-SessionManagerRunShell"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/session-manager/session-data-key"
+              - !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/SSM-SessionManagerRunShell"
+              - !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/session-manager/session-data-key"
           - Effect: Allow
             Action:
               - xray:PutTraceSegments
@@ -556,7 +555,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+              AWS: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
             Action:
               - kms:*
             Resource: "*"
@@ -591,7 +590,7 @@ Resources:
         Statement:
           - Effect: "Allow"
             Principal:
-              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+              AWS: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
             Action: "kms:*"
             Resource: "*"
           - Sid: "Allow Cloudwatch logs to use the encryption key"
@@ -607,7 +606,7 @@ Resources:
             Resource: "*"
             Condition:
               ArnLike:
-                "kms:EncryptionContext:aws:logs:arn": !Sub "arn:aws:logs:${AWS::Region}:*:log-group:*"
+                "kms:EncryptionContext:aws:logs:arn": !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:*:log-group:*"
       EnableKeyRotation: False
 
   SessionLogsKeyAlias:
@@ -632,6 +631,8 @@ Resources:
 
   UpdateSessionManagerCustomResource:
     Type: Custom::UpdateSessionManager
+    DependsOn:
+      - LambdaExecutionPolicy
     Properties:
       ServiceToken: !GetAtt UpdateSessionManagerFunction.Arn
       S3_LOGGING: !Ref S3Logging

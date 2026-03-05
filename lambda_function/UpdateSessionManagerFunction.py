@@ -307,7 +307,6 @@ def lambda_handler(event, context):
     Returns:
         dict: Response containing status code and completion message
     """
-    logger.info("Received event: %s", event)
 
     # Setting physical resource ID to stack ID
     physical_resource_id = event["ResourceProperties"].get(
