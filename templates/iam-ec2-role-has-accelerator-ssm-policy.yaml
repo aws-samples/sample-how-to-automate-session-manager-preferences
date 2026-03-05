@@ -63,7 +63,7 @@ Resources:
           AutomationAssumeRole:
             type: String
             description: (Required) The ARN of the role that allows Automation to perform the actions on your behalf.
-            allowedPattern: ^arn:aws[a-z0-9-]*:iam::\d{12}:role\/[\w-\/.@+=,]{1,1017}$
+            allowedPattern: ^arn:(aws|aws-cn|aws-us-gov)[a-z0-9-]*:iam::\d{12}:role\/[\w-\/.@+=,]{1,1017}$
           IAMResourceId:
             type: String
             description: (Required) IAM resource unique identifier for the IAM Role.
@@ -72,6 +72,9 @@ Resources:
             type: String
             default: !Ref SessionManagerPolicyName
             description: (Required) The name of the policy to attach to the instance profile.
+          Partition:
+            type: String
+            description: (Required) The AWS partition (e.g., aws, aws-cn, aws-us-gov).
         outputs:
           - AttachIAMPolicyAndVerify.Output
         mainSteps:
@@ -90,6 +93,7 @@ Resources:
               InputPayload:
                 IAMResourceId: "{{ IAMResourceId }}"
                 SSMPolicyName: "{{ SSMPolicyName }}"
+                Partition: "{{ Partition }}"
               Script: |
                 import json
                 import boto3
@@ -139,7 +143,8 @@ Resources:
 
 
                         # Attach the policy to the role (Assumes policy is in the main path)
-                        policy_arn = f"arn:aws:iam::{account_id}:policy/{ssm_policy_name}"
+                        partition = event.get("Partition", "aws")
+                        policy_arn = f"arn:{partition}:iam::{account_id}:policy/{ssm_policy_name}"
                         response = iam_client.attach_role_policy(
                             RoleName=role_name, PolicyArn=policy_arn
                         )
@@ -195,7 +200,7 @@ Resources:
               StringEquals:
                 aws:SourceAccount: !Sub ${AWS::AccountId}
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonSSMAutomationRole
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonSSMAutomationRole"
       Path: "/"
 
   AutomationServiceRolePolicy:
@@ -239,6 +244,10 @@ Resources:
           StaticValue:
             Values:
               - !Ref SessionManagerPolicyName
+        Partition:
+          StaticValue:
+            Values:
+              - !Ref AWS::Partition
         IAMResourceId:
           ResourceValue:
             Value: RESOURCE_ID

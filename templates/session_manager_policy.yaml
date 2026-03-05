@@ -29,16 +29,16 @@ Resources:
           - Effect: Allow
             Action:
               - logs:DescribeLogStreams
-            Resource: !Sub "arn:aws:logs:*:${AWS::AccountId}:log-group:${CWLogGroupName}"
+            Resource: !Sub "arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:${CWLogGroupName}"
           - Effect: Allow
             Action:
               - "logs:CreateLogStream"
               - "logs:PutLogEvents"
-            Resource: !Sub "arn:aws:logs:*:${AWS::AccountId}:log-group:${CWLogGroupName}:log-stream:*"
+            Resource: !Sub "arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:${CWLogGroupName}:log-stream:*"
           - Effect: Allow
             Action:
               - kms:Decrypt
-            Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*"
+            Resource: !Sub "arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/*"
             Condition:
               ForAllValues:StringLike:
                 "kms:ResourceAliases":
